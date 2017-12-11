@@ -1,0 +1,103 @@
+
+// -----------------------------------
+// The Connected Shoe Odometer
+// -----------------------------------
+// For demo use web notification will be sent out after 10 clicks
+// The project goal is to have pushbutton track number of clicks and publish captured clicks in Thinkspeak.  Once 1,000,000 clicks are reached IFTTT will send out a SMS or email message to defined location.  Message will read - Dear "user name" Congratulations - 500 miles have been logged onto your current running shoes and the life of these shoes has expired. For optimum performance and health its time for you to purchase a new pair of running shoes. Use this discount code NEWPAIRFORME either online or at any of our authorized retail stores for a great deal on a new pair of running shoes.
+
+Sincerely,
+The Connected Shoe Odometer Team
+
+
+// We will be using D1 to control our LED
+int ledPin = D1;
+
+// Our button wired to D0
+int buttonPin = D0;
+
+// initialize useful variables
+int count = 0;
+int now = 0;
+int then= 0;
+
+void setup()
+{
+
+  // For input, we define the
+  // pushbutton as an input-pullup
+  // this uses an internal pullup resistor
+  // to manage consistent reads from the device
+
+  pinMode( buttonPin , INPUT_PULLUP); // sets pin as input
+
+  // We also want to use the LED
+
+  pinMode( ledPin , OUTPUT ); // sets pin as output
+  
+  // initialize the serial port
+  //Serial.begin(115200);
+  Serial.begin(9600);
+
+  //Get the current value of steps here.
+  Particle.subscribe("hook-response/getSteps", myHandler, MY_DEVICES);
+}
+
+void myHandler(const char *event, const char *data) {
+  if(atoi(data) >0)
+  {
+  //convert current response into Count.
+  count=atoi(data);
+  }
+}
+
+void loop()
+{
+   // find out if the button is pushed
+   // or not by reading from it.
+   int buttonState = digitalRead( buttonPin );
+
+  // remember that we have wired the pushbutton to
+  // ground and are using a pulldown resistor
+  // that means, when the button is pushed,
+  // we will get a LOW signal
+  // when the button is not pushed we'll get a HIGH
+
+  // let's use that to set our LED on or off
+ 
+  if( buttonState == LOW )
+  {
+    now = millis();     // this grabs the number of milliseconds since device turned on
+    Serial.print("now-then: "); Serial.println(now-then);
+    // increment counter 
+    count = count + 1;
+    // turn the LED On
+    digitalWrite( ledPin, HIGH);
+    //chagne this veriable to 1000000 for real use case
+	if(count == 10){
+	
+	Serial.print("counts: "); Serial.println(count);
+			Particle.publish("The Connected Shoe Odometer", String(count), PRIVATE);
+			then = millis(); // this grabs the number of milliseconds since device turned on
+			Serial.print("then: "); Serial.println(then);
+	}
+	
+    if(now - then >= 15000){
+		
+			Serial.print("counts: "); Serial.println(count);
+			Particle.publish("The Connected Shoe Odometer", String(count), PRIVATE);
+			then = millis(); // this grabs the number of milliseconds since device turned on
+			Serial.print("then: "); Serial.println(then);
+    }
+    
+    delay(100);
+
+  }
+  else{
+    // otherwise
+    // turn the LED Off
+    digitalWrite( ledPin, LOW);
+
+  }
+
+
+}
